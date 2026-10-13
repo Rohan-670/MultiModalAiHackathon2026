@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg-page: #F7F7F3;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F0F4F2;
+  --bg-surface-sunken: #ECEEEA;
+  --border-subtle: #E2E7E4;
+  --border-strong: #C4CEC9;
+  --text-primary: #242B2B;
+  --text-secondary: #687371;
+  --text-muted: #8F9A97;
+  --accent-primary: #167D78;
+  --accent-hover: #126561;
+  --accent-soft: #E6EFEB;
+  --accent-border: #9DD0CA;
+  --color-success: #1E8E68;
+  --color-warning: #D97706;
+  --color-danger: #DC2626;
+  --color-info: #0284C7;
+}
+
+html.dark {
+  --bg-page: #202725;
+  --bg-surface: #2C3633;
+  --bg-surface-elevated: #36423E;
+  --bg-surface-sunken: #1A211F;
+  --border-subtle: #3E4B46;
+  --border-strong: #50615A;
+  --text-primary: #F0F3EF;
+  --text-secondary: #AAB7B2;
+  --text-muted: #7E8D88;
+  --accent-primary: #55B8AE;
+  --accent-hover: #459E95;
+  --accent-soft: #233A36;
+  --accent-border: #3A6962;
+  --color-success: #34D399;
+  --color-warning: #FBBF24;
+  --color-danger: #F87171;
+  --color-info: #38BDF8;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
+
+/* Code Blocks & Math Font */
+code, pre, kbd, samp {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Utility Theme Classes */
+.bg-theme-page { background-color: var(--bg-page); }
+.bg-theme-surface { background-color: var(--bg-surface); }
+.bg-theme-elevated { background-color: var(--bg-surface-elevated); }
+.bg-theme-soft { background-color: var(--bg-soft); }
+.text-theme-primary { color: var(--text-primary); }
+.text-theme-secondary { color: var(--text-secondary); }
+.text-theme-muted { color: var(--text-muted); }
+.border-theme-subtle { border-color: var(--border-subtle); }
+.border-theme-strong { border-color: var(--border-strong); }
+.accent-theme-color { color: var(--accent-primary); }
+.bg-theme-accent { background-color: var(--accent-primary); }
+.bg-theme-accent-soft { background-color: var(--accent-soft); }
