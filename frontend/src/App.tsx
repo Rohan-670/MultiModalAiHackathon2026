@@ -17,13 +17,13 @@ import { AuthModal } from './components/AuthModal';
 import type { ChatMessage, Citation, SourceSummary, Language, LearnerProfile, UserProfile } from './types';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<NavTab>('quiz');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('English');
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfile | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [practiceTopic, setPracticeTopic] = useState<string>('Gradient Descent & Optimization');
+  const [practiceTopic, setPracticeTopic] = useState<string>('Calculus & Optimization');
 
   // Theme Management (Light / Dark with local persistence)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -59,13 +59,13 @@ export const App: React.FC = () => {
   }, []);
 
   const [activeCitation, setActiveCitation] = useState<Citation | null>({
-    tag: "[CS229 Lecture 1 @ 04:15]",
-    source_name: "CS229 Lecture 1 - Optimization Fundamentals",
+    tag: "[Optimization Fundamentals @ 04:15]",
+    source_name: "Optimization Fundamentals & Problem Solving",
     source_type: "video",
     timestamp_str: "04:15",
     start_seconds: 255,
     video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    snippet: "If alpha is set too large, gradient descent can overshoot the global minimum, bounce across ravine walls, and catastrophically diverge towards numerical infinity."
+    snippet: "If step size is set too large, gradient descent can overshoot the global minimum, bounce across ravine walls, and catastrophically diverge towards numerical infinity."
   });
 
   const [sources, setSources] = useState<SourceSummary[]>([]);
@@ -76,23 +76,15 @@ export const App: React.FC = () => {
     {
       id: 'welcome_1',
       sender: 'assistant',
-      text: "Welcome to LearnSphere AI! I am strictly grounded in your lecture videos, textbooks, and slide decks. Ask me any question, select a teaching style (Socratic, Worked Example, Step-by-Step), or click any citation badge like [CS229 Lecture 1 @ 04:15] to jump the video player or preview the textbook.",
+      text: "Welcome to LearnSphere MARKS! Build custom adaptive tests tailored to your exact requirements, practice chapter-wise questions, or ask conceptual questions with step-by-step mathematical derivations.",
       timestamp: "Just now",
       citations: [
         {
-          tag: "[CS229 Lecture 1 @ 04:15]",
-          source_name: "CS229 Lecture 1 - Optimization Fundamentals",
-          source_type: "video",
-          timestamp_str: "04:15",
-          start_seconds: 255,
-          snippet: "If alpha is set too large, gradient descent can overshoot the global minimum, bounce across ravine walls, and catastrophically diverge towards numerical infinity."
-        },
-        {
-          tag: "[Deep Learning Textbook p. 14]",
-          source_name: "Deep Learning Textbook (Goodfellow)",
+          tag: "[Curriculum Reference p. 14]",
+          source_name: "Mathematics & Optimization Reference",
           source_type: "pdf",
           page: 14,
-          snippet: "Chapter 4: Numerical Computation. Most deep learning algorithms involve continuous optimization. Gradient descent is an iterative first-order optimization algorithm for finding a local minimum."
+          snippet: "Continuous optimization and gradient descent: iterative first-order algorithms for finding extrema of convex and non-convex functions."
         }
       ],
       suggestedFollowups: [

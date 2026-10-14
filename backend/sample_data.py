@@ -1,5 +1,5 @@
 """
-High-quality multimodal curriculum dataset for the hackathon demo.
+Curriculum dataset for multi-modal grounding and test assessment.
 Pre-seeds rich lecture video timestamps, textbook pages, and slide decks
 on Gradient Descent, Neural Network Optimization, and Backpropagation.
 """

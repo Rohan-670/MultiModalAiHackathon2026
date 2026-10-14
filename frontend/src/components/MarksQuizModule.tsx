@@ -48,13 +48,13 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
 }) => {
   // ---------------- Core App Navigation & State ----------------
   const [activeView, setActiveView] = useState<QuizViewMode>('create');
-  const [targetExam, setTargetExam] = useState<string>('CS229 & AI/ML');
+  const [targetExam, setTargetExam] = useState<string>('JEE Main');
   const availableExams = [
-    { id: 'CS229 & AI/ML', title: 'Stanford CS229 / AI & Machine Learning', description: 'Optimization, neural backprop, and machine learning.' },
     { id: 'JEE Main', title: 'JEE Main 2026', description: 'Engineering entrance: Maths, Physics, Chemistry.' },
     { id: 'JEE Advanced', title: 'JEE Advanced', description: 'IIT entrance: multi-correct, integer numericals.' },
     { id: 'NEET UG', title: 'NEET UG', description: 'Medical entrance: Biology, Physics, Chemistry.' },
-    { id: 'GATE CS & AI', title: 'GATE Computer Science & AI', description: 'Algorithms, systems, and AI foundations.' }
+    { id: 'GATE CS & AI', title: 'GATE Computer Science & AI', description: 'Algorithms, systems, and AI foundations.' },
+    { id: 'CS229 & AI/ML', title: 'Stanford CS229 / AI & Machine Learning', description: 'Optimization, neural backprop, and machine learning.' }
   ];
   const [curriculum, setCurriculum] = useState<ExamCurriculum | null>(null);
 

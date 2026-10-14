@@ -60,7 +60,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-teal-100 text-xs font-semibold backdrop-blur-xs">
             <Sparkles className="w-3.5 h-3.5 text-teal-200" />
-            <span>Active Course: CS229 Machine Learning & Optimization</span>
+            <span>Target Exam Prep: Adaptive Assessment & CBT Simulator</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -68,32 +68,32 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </h1>
 
           <p className="text-teal-100/90 text-xs sm:text-sm leading-relaxed">
-            Your Bayesian Learner Model has tracked 7 concepts across 3 course sources. You are 65% through the Optimization Fundamentals module.
+            Generate custom tests on your exact syllabus requirements, practice chapter questions, and strengthen weak concepts with real-time analytics.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
-              onClick={() => onNavigateTab('notes')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-teal-900 font-semibold text-xs hover:bg-teal-50 transition-all shadow-sm cursor-pointer"
-            >
-              <FileText className="w-3.5 h-3.5 text-teal-700" />
-              <span>Upload & Analyze Notes</span>
-            </button>
-
-            <button
-              onClick={() => onNavigateTab('video')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-900/60 hover:bg-teal-900/80 border border-teal-500/40 text-white font-medium text-xs transition-all cursor-pointer"
-            >
-              <Play className="w-3.5 h-3.5 fill-white" />
-              <span>Watch Video Tutor</span>
-            </button>
-
-            <button
               onClick={() => onNavigateTab('quiz')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-teal-900 font-bold text-xs hover:bg-teal-50 transition-all shadow-md cursor-pointer"
+            >
+              <Target className="w-4 h-4 text-teal-700" />
+              <span>Launch MARKS Custom Test</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab('notes')}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-900/60 hover:bg-teal-900/80 border border-teal-500/40 text-white font-medium text-xs transition-all cursor-pointer"
             >
-              <Target className="w-3.5 h-3.5 text-teal-300" />
-              <span>MARKS Custom Test</span>
+              <FileText className="w-3.5 h-3.5 text-teal-300" />
+              <span>Upload Notes / Syllabus</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab('chat')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-900/60 hover:bg-teal-900/80 border border-teal-500/40 text-white font-medium text-xs transition-all cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-teal-300" />
+              <span>Ask AI Tutor</span>
             </button>
           </div>
         </div>
@@ -326,7 +326,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
 
             <div
-              onClick={() => onNavigateTab('evaluation')}
+              onClick={() => onNavigateTab('quiz')}
               className="p-4 rounded-2xl bg-white dark:bg-[#2C3633] border border-slate-200 dark:border-slate-700/80 hover:border-teal-500/60 dark:hover:border-teal-400/60 shadow-xs cursor-pointer transition-all flex items-center justify-between group"
             >
               <div className="flex items-center gap-3">
@@ -334,8 +334,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs text-slate-900 dark:text-white">RAGAS Benchmark & System Audit</div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Faithfulness, Relevancy, Precision, 0% repetition</div>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white">NTA CBT Simulator & Notebook</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Full-screen CBT exam, question palette & bookmark notebook</div>
                 </div>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-teal-600 transition-colors" />

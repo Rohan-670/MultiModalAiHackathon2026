@@ -66,12 +66,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
+    { id: 'quiz', label: 'MARKS Custom Test', icon: Target },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'notes', label: 'Notes Studio', icon: FileText },
     { id: 'chat', label: 'Tutor Chat', icon: BookOpen },
     { id: 'video', label: 'Video Tutor', icon: Video },
     { id: 'revision', label: 'Study Cards', icon: BookmarkCheck },
-    { id: 'quiz', label: 'MARKS Custom Test', icon: Target },
     { id: 'flow', label: 'Course Map', icon: Network },
     { id: 'library', label: 'Library', icon: FolderOpen }
   ] as const;
@@ -99,17 +99,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </h1>
               <span className="hidden sm:inline-flex text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-                Editorial SaaS
+                MARKS Prep
               </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden md:block">
-              Learn deeply. Improve continuously.
+              Targeted Exam Assessment & Practice
             </p>
           </div>
         </div>
 
         {/* Desktop Navigation Tabs */}
-        <nav className="hidden 2xl:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700/60">
+        <nav className="hidden xl:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700/60">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -224,7 +224,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Mobile Menu Hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="2xl:hidden p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 cursor-pointer"
+            className="xl:hidden p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -233,7 +233,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="2xl:hidden mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-3 gap-2 animate-fadeIn">
+        <div className="xl:hidden mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-3 gap-2 animate-fadeIn">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
