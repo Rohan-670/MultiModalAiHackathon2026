@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for LearnSphere AI / MARKS Assessment Platform
+# Multi-stage Dockerfile for LearnSphere AI Platform
 # Stage 1: Build the React 19 Frontend
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend

@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  learnsphere-marks:
+  learnsphere-ai:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: learnsphere_marks_app
+    container_name: learnsphere_app
     ports:
       - "8000:8000"
     environment:

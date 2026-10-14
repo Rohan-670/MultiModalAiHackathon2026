@@ -2,28 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { Navbar, type NavTab } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { StudentDashboard } from './components/StudentDashboard';
+import { PersonalizeNotes } from './components/PersonalizeNotes';
 import { ChatInterface } from './components/ChatInterface';
 import { NotesStudio } from './components/NotesStudio';
 import { SourceViewer, VideoPlayerModule } from './components/SourceViewer';
 import { CourseLibrary } from './components/CourseLibrary';
 import { QuizModule } from './components/QuizModule';
-import { CourseFlowMap } from './components/CourseFlowMap';
 import { LearnerModelView } from './components/LearnerModelView';
 import { RevisionSuite } from './components/RevisionSuite';
 import { EvaluationDashboard } from './components/EvaluationDashboard';
 import { KnowledgeGapReport } from './components/KnowledgeGapReport';
 import { SourceDrawer } from './components/SourceDrawer';
 import { AuthModal } from './components/AuthModal';
+import { AcademicOnboardingModal } from './components/AcademicOnboardingModal';
+import { getStarterNotesForProfile } from './starterNotes';
 import type { ChatMessage, Citation, SourceSummary, Language, LearnerProfile, UserProfile } from './types';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<NavTab>('quiz');
+  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>('English');
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(() => {
+    const saved = localStorage.getItem('learnsphere_language');
+    return (saved as Language) || 'English';
+  });
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfile | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [practiceTopic, setPracticeTopic] = useState<string>('Calculus & Optimization');
+
+  const handleLanguageChange = (lang: Language) => {
+    setSelectedLanguage(lang);
+    localStorage.setItem('learnsphere_language', lang);
+  };
 
   // Theme Management (Light / Dark with local persistence)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -71,12 +82,12 @@ export const App: React.FC = () => {
   const [sources, setSources] = useState<SourceSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initial welcome message with working demo citation badges
+  // Initial welcome message without "MARKS Prep"
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome_1',
       sender: 'assistant',
-      text: "Welcome to LearnSphere MARKS! Build custom adaptive tests tailored to your exact requirements, practice chapter-wise questions, or ask conceptual questions with step-by-step mathematical derivations.",
+      text: "Welcome to LearnSphere! Build adaptive quizzes tailored to your study needs, practice questions across any subject, or ask conceptual questions with step-by-step derivations.",
       timestamp: "Just now",
       citations: [
         {
@@ -167,12 +178,10 @@ export const App: React.FC = () => {
 
       setMessages(prev => [...prev, assistantMsg]);
 
-      // Automatically sync the first citation in response to Source Viewer if available
       if (data.citations && data.citations.length > 0) {
         setActiveCitation(data.citations[0]);
       }
 
-      // Update learner model if conversation updated it
       fetchLearnerProfile();
     } catch (e) {
       console.error("Chat error", e);
@@ -217,6 +226,42 @@ export const App: React.FC = () => {
   const handleAuthSuccess = (authedUser: UserProfile, _token: string) => {
     setUser(authedUser);
     fetchLearnerProfile();
+    setActiveTab('dashboard');
+    if (!authedUser.class_grade && !authedUser.onboarding_completed) {
+      setTimeout(() => setIsOnboardingOpen(true), 350);
+    }
+  };
+
+  const handleCompleteOnboarding = (classGrade: string, subject: string) => {
+    const starterNotes = getStarterNotesForProfile(classGrade, subject);
+    if (!user) {
+      const guestUser: UserProfile = {
+        id: Date.now(),
+        email: 'student@learnsphere.ai',
+        full_name: 'Enrolled Student',
+        role: 'student',
+        class_grade: classGrade,
+        target_subject: subject,
+        onboarding_completed: true
+      };
+      setUser(guestUser);
+      localStorage.setItem('auth_user', JSON.stringify(guestUser));
+      localStorage.setItem(`learnsphere_notes_user_${guestUser.id}`, JSON.stringify(starterNotes));
+      return;
+    }
+
+    const updatedUser: UserProfile = {
+      ...user,
+      class_grade: classGrade,
+      target_subject: subject,
+      onboarding_completed: true
+    };
+    setUser(updatedUser);
+    localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+
+    const userKey = `user_${user.id || user.email}`;
+    const storageKey = `learnsphere_notes_${userKey}`;
+    localStorage.setItem(storageKey, JSON.stringify(starterNotes));
   };
 
   const handleLogout = () => {
@@ -242,6 +287,9 @@ export const App: React.FC = () => {
         setUser(data.user);
         fetchLearnerProfile();
         setActiveTab('dashboard');
+        if (!data.user.class_grade) {
+          setTimeout(() => setIsOnboardingOpen(true), 350);
+        }
       }
     } catch (err) {
       console.error("Quick demo login failed", err);
@@ -258,7 +306,7 @@ export const App: React.FC = () => {
         openDrawer={() => setIsDrawerOpen(true)}
         sourceCount={sources.length}
         selectedLanguage={selectedLanguage}
-        onSelectLanguage={setSelectedLanguage}
+        onSelectLanguage={handleLanguageChange}
         learnerProfile={learnerProfile}
         theme={theme}
         onToggleTheme={handleToggleTheme}
@@ -272,6 +320,7 @@ export const App: React.FC = () => {
         {/* 1. Landing Page Overview */}
         {activeTab === 'landing' && (
           <LandingPage
+            language={selectedLanguage}
             onGetStarted={() => setActiveTab('dashboard')}
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onQuickDemo={handleQuickDemoLogin}
@@ -283,18 +332,40 @@ export const App: React.FC = () => {
           <StudentDashboard
             user={user}
             learnerProfile={learnerProfile}
+            language={selectedLanguage}
             onNavigateTab={setActiveTab}
             onAskConcept={handleAskConcept}
             onPracticeConcept={handlePracticeConcept}
           />
         )}
 
-        {/* 2.5 AI Notes Studio (Upload Notes, Important Points, Voiceover Video, Cards) */}
+        {/* 2.5 Personalize Notes (Add & Delete Notes, Generate Quiz on Demand) */}
+        {activeTab === 'personalize' && (
+          <div className="py-2">
+            <PersonalizeNotes
+              user={user}
+              language={selectedLanguage}
+              onGenerateQuizFromNote={(topic) => {
+                setPracticeTopic(topic);
+                setActiveTab('quiz');
+              }}
+              onStudyWithAI={(_topic) => {
+                setActiveTab('notes');
+              }}
+              onOpenOnboarding={() => setIsOnboardingOpen(true)}
+            />
+          </div>
+        )}
+
+        {/* 2.8 AI Notes Studio (Upload Notes, Important Points, Voiceover Video, Cards) */}
         {activeTab === 'notes' && (
           <div className="py-2">
             <NotesStudio
+              user={user}
+              language={selectedLanguage}
               onAskTutor={handleAskConcept}
               onNavigateToQuiz={handlePracticeConcept}
+              onOpenOnboarding={() => setIsOnboardingOpen(true)}
             />
           </div>
         )}
@@ -302,7 +373,6 @@ export const App: React.FC = () => {
         {/* 3. Tutor & Sources Grounded Workspace */}
         {activeTab === 'chat' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-100px)] min-h-[600px]">
-            {/* Left: Chat Interface with Voice STT/TTS & Off-material alerts */}
             <div className="h-full overflow-hidden">
               <ChatInterface
                 messages={messages}
@@ -310,12 +380,11 @@ export const App: React.FC = () => {
                 isLoading={isLoading}
                 onSelectCitation={handleCitationClick}
                 selectedLanguage={selectedLanguage}
-                onSelectLanguage={setSelectedLanguage}
+                onSelectLanguage={handleLanguageChange}
                 onResetChat={handleResetChat}
               />
             </div>
 
-            {/* Right: Click-to-Jump Source Viewer (Video, PDF, Figures) */}
             <div className="h-full overflow-hidden">
               <SourceViewer
                 activeCitation={activeCitation}
@@ -326,7 +395,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* 4. Video Tutor Player (3 Pedagogical Styles) */}
+        {/* 4. Video Tutor Player */}
         {activeTab === 'video' && (
           <div className="py-2">
             <VideoPlayerModule
@@ -347,7 +416,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* 6. MARKS Custom Assessment Module */}
+        {/* 6. Adaptive Assessment & Quiz Studio */}
         {activeTab === 'quiz' && (
           <div className="py-2">
             <QuizModule
@@ -359,17 +428,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* 7. Course Flow Map DAG */}
-        {activeTab === 'flow' && (
-          <div className="py-2">
-            <CourseFlowMap
-              onSelectCitation={handleCitationClick}
-              onAskTutor={handleAskConcept}
-            />
-          </div>
-        )}
-
-        {/* 8. Learner Model BKT Engine */}
+        {/* 8. Learner Model Mastery Engine */}
         {activeTab === 'learner' && (
           <div className="py-2">
             <LearnerModelView
@@ -381,16 +440,17 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* 9. Revision Suite (Flashcards, Spoken Brief, Spaced Schedule) */}
+        {/* 9. Revision Suite (Visual Flashcards, Spoken Brief, Spaced Schedule) */}
         {activeTab === 'revision' && (
           <div className="py-2">
             <RevisionSuite
+              language={selectedLanguage}
               onCitationClick={handleCitationClick}
             />
           </div>
         )}
 
-        {/* 10. System Evaluation & RAGAS Benchmarking */}
+        {/* 10. System Evaluation & Benchmarking */}
         {activeTab === 'evaluation' && (
           <div className="py-2">
             <EvaluationDashboard />
@@ -422,6 +482,17 @@ export const App: React.FC = () => {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+        selectedLanguage={selectedLanguage}
+        onSelectLanguage={handleLanguageChange}
+      />
+
+      {/* Academic Level & Subject Onboarding Modal */}
+      <AcademicOnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        user={user}
+        onComplete={handleCompleteOnboarding}
+        language={selectedLanguage}
       />
     </div>
   );

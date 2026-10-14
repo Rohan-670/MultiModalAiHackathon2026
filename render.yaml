@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: learnsphere-marks-app
+    name: learnsphere-app
     env: docker
     plan: free
     dockerfilePath: Dockerfile

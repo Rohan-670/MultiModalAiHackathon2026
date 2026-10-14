@@ -22,19 +22,31 @@ import {
   FileUp,
   X,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  HelpCircle,
+  BookMarked
 } from 'lucide-react';
-import type { NoteAnalysisResult, NoteStudyCard } from '../types';
+import { CardVisualDiagram } from './CardVisualDiagram';
+import type { NoteAnalysisResult, NoteStudyCard, NoteQAPair, Language, UserProfile } from '../types';
+import { getTranslation } from '../i18n';
+import { getStarterNotesForProfile } from '../starterNotes';
 
 interface NotesStudioProps {
   onAskTutor?: (question: string) => void;
   onNavigateToQuiz?: (topic: string) => void;
+  language?: Language;
+  user?: UserProfile | null;
+  onOpenOnboarding?: () => void;
 }
 
 export const NotesStudio: React.FC<NotesStudioProps> = ({
   onAskTutor,
-  onNavigateToQuiz
+  onNavigateToQuiz,
+  language = 'English',
+  user,
+  onOpenOnboarding
 }) => {
+  const t = getTranslation(language);
   // Input State
   const [inputMode, setInputMode] = useState<'upload' | 'paste'>('upload');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -44,12 +56,14 @@ export const NotesStudio: React.FC<NotesStudioProps> = ({
   const [analysisStage, setAnalysisStage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Active View Tab in Results: 'points', 'video', 'cards', 'chat'
-  const [activeTab, setActiveTab] = useState<'points' | 'video' | 'cards' | 'chat'>('points');
+  // Active View Tab in Results: 'qa_notes', 'points', 'video', 'cards', 'chat'
+  const [activeTab, setActiveTab] = useState<'qa_notes' | 'points' | 'video' | 'cards' | 'chat'>('qa_notes');
 
   // Analysis Result
   const [analysis, setAnalysis] = useState<NoteAnalysisResult | null>(null);
   const [copiedSummary, setCopiedSummary] = useState(false);
+  const [copiedQAId, setCopiedQAId] = useState<string | null>(null);
+  const [copiedAllQA, setCopiedAllQA] = useState<boolean>(false);
 
   // ---------------- Video Tutor with Voiceover State ----------------
   const [currentSceneIdx, setCurrentSceneIdx] = useState<number>(0);
@@ -117,6 +131,15 @@ v_(t+1) = β * v_t + α * ∇J(θ_t)
 where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
 
   const handleLoadSampleNotes = () => {
+    if (user?.target_subject && user?.class_grade) {
+      const starters = getStarterNotesForProfile(user.class_grade, user.target_subject);
+      if (starters.length > 0) {
+        setTextNotes(`${starters[0].title}\n\n${starters[0].content}`);
+        setTopicInput(starters[0].title);
+        setInputMode('paste');
+        return;
+      }
+    }
     setTextNotes(sampleNotes);
     setTopicInput("Gradient Descent & Optimization");
     setInputMode('paste');
@@ -163,7 +186,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
         data = await res.json();
       }
 
-      setAnalysisStage("3/3: Assembling voiceover video & study flashcards...");
+      setAnalysisStage("3/3: Assembling descriptive Q&A notes, video & flashcards...");
       setTimeout(() => {
         setAnalysis(data);
         setCardsList(data.cards || []);
@@ -171,7 +194,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
         setIsCardFlipped(false);
         setCurrentSceneIdx(0);
         setIsAnalyzing(false);
-        setActiveTab('points');
+        setActiveTab('qa_notes');
       }, 500);
 
     } catch (err) {
@@ -181,14 +204,72 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
       setAnalysis(fallback);
       setCardsList(fallback.cards);
       setIsAnalyzing(false);
-      setActiveTab('points');
+      setActiveTab('qa_notes');
     }
   };
 
   const getDeterministicFallback = (topic: string): NoteAnalysisResult => ({
     title: topic,
     topic: topic,
-    summary: `Comprehensive AI analysis of '${topic}'. Synthesized key takeaways, definitions, and high-yield formulas into an actionable study suite with voiceover video and study cards.`,
+    summary: `Comprehensive AI analysis of '${topic}'. Synthesized key takeaways, definitions, and high-yield formulas into an actionable study suite with Question-with-Answer topic notes.`,
+    descriptive_qa_notes: [
+      {
+        id: "qa_1",
+        topic_section: "1. Optimization Objective & Intuition",
+        question: "1. What is the fundamental objective and geometric intuition behind Gradient Descent?",
+        detailed_answer: "Gradient Descent is a fundamental first-order iterative optimization algorithm designed to locate local or global extrema of an objective loss function J(θ). The algorithm measures empirical risk across training data: J(θ) = (1/2m) Σ (h_θ(x^(i)) - y^(i))^2. Geometrically, the negative gradient -∇J(θ) specifies the vector of steepest descent downhill. By repeatedly taking small steps opposite to the gradient vector scaled by the learning rate hyperparameter α, parameter values migrate from arbitrary initialization points toward the minimum of the loss bowl.",
+        key_takeaways: [
+          "Minimizes empirical risk by descending along the negative gradient vector.",
+          "Learning rate α controls step magnitude along the loss surface."
+        ],
+        formula_or_diagram_note: "Geometric Direction: -∇J(θ) points directly down the slope."
+      },
+      {
+        id: "qa_2",
+        topic_section: "2. The Parameter Update Equation",
+        question: "2. How is the parameter update equation formulated, and what role does the learning rate play?",
+        detailed_answer: "The continuous update equation is formally written as θ_(t+1) = θ_t - α · ∇J(θ_t). In this relationship, θ represents the vector of trainable weights, ∇J(θ_t) is the Jacobian or gradient vector containing first-order partial derivatives, and α is the positive learning rate scalar. If α is chosen properly, each iteration strictly decreases the loss function until reaching a stationary point where the gradient magnitude vanishes.",
+        key_takeaways: [
+          "Update Rule: θ := θ - α · ∇J(θ)",
+          "Stationary point condition: ||∇J(θ)|| ≈ 0 at convergence."
+        ],
+        formula_or_diagram_note: "θ_(t+1) = θ_t - α · ∇J(θ_t)"
+      },
+      {
+        id: "qa_3",
+        topic_section: "3. Learning Rate Oscillation & Divergence Bound",
+        question: "3. Under what exact conditions does Gradient Descent oscillate or catastrophically diverge?",
+        detailed_answer: "Convergence stability is governed by the curvature (Hessian eigenvalues) of the loss surface. Specifically, for quadratic loss surfaces with maximum Hessian eigenvalue λ_max, stable convergence requires α < 2 / λ_max. If α exceeds this critical threshold, updates overshoot the quadratic valley floor. The magnitude of displacement increases exponentially with each step, causing violent cross-ravine oscillation and catastrophic divergence to numerical infinity.",
+        key_takeaways: [
+          "Stability threshold: α < 2 / λ_max",
+          "Overstepping causes exponential divergence across steep valley walls."
+        ],
+        formula_or_diagram_note: "Critical Divergence Threshold: α_crit = 2 / λ_max"
+      },
+      {
+        id: "qa_4",
+        topic_section: "4. Polyak Momentum Acceleration",
+        question: "4. How does Polyak Momentum alleviate oscillation in ill-conditioned ravines?",
+        detailed_answer: "Ill-conditioned loss ravines feature high curvature across valley walls (large λ_max) but gentle slopes along the valley floor (small λ_min). Standard gradient descent spends most of its budget bouncing uselessly back and forth across the steep walls. Polyak Momentum introduces an exponential moving average velocity vector: v_(t+1) = β · v_t + α · ∇J(θ_t), followed by θ_(t+1) = θ_t - v_(t+1), with momentum coefficient β typically set to 0.9. Because opposing cross-ravine gradients alternate signs, they cancel each other out in the velocity accumulator, while aligned downhill gradients compound, accelerating convergence along the valley floor.",
+        key_takeaways: [
+          "Velocity rule: v_(t+1) = β · v_t + α · ∇J(θ_t)",
+          "Alternating transverse oscillations cancel; aligned longitudinal steps accelerate."
+        ],
+        formula_or_diagram_note: "Velocity Accumulation: v_(t+1) = β · v_t + α · ∇J(θ_t)"
+      },
+      {
+        id: "qa_5",
+        topic_section: "5. Comprehensive Topic Synthesis & Practical Takeaways",
+        question: "5. What are the key practical takeaways when applying optimization algorithms in real-world pipelines?",
+        detailed_answer: "When building real-world machine learning systems, students and practitioners must combine theoretical insight with practical heuristics: 1) Always normalize or standardize input features so the condition number λ_max / λ_min is close to 1, creating symmetric spherical loss contours; 2) Utilize learning rate warmup or cosine decay schedules; 3) Prefer momentum-equipped optimizers (such as Adam or Momentum SGD) over vanilla gradient descent; 4) Monitor training loss curves for signs of divergence (spikes) or stagnation.",
+        key_takeaways: [
+          "Feature normalization eliminates high condition number asymmetries.",
+          "Employ learning rate schedules and momentum for robust convergence.",
+          "Validate training stability through live gradient monitoring."
+        ],
+        formula_or_diagram_note: "Best Practice: Feature Standardizing + Momentum SGD / Adam"
+      }
+    ],
     important_points: {
       key_takeaways: [
         "First-order optimization iteratively descends the loss surface opposite to ∇J(θ).",
@@ -369,13 +450,30 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
 
   const masteredCount = cardsList.filter(c => c.isMastered).length;
 
-  // ---------------- Copy Summary ----------------
+  // ---------------- Copy Summary & Q&A Notes ----------------
   const handleCopySummary = () => {
     if (!analysis) return;
     const textToCopy = `Title: ${analysis.title}\n\nSummary:\n${analysis.summary}\n\nKey Takeaways:\n${analysis.important_points.key_takeaways.map(k => `• ${k}`).join('\n')}`;
     navigator.clipboard.writeText(textToCopy);
     setCopiedSummary(true);
     setTimeout(() => setCopiedSummary(false), 2000);
+  };
+
+  const handleCopySingleQA = (qa: NoteQAPair, id: string) => {
+    const textToCopy = `Question:\n${qa.question}\n\nDetailed Answer:\n${qa.detailed_answer}${qa.key_takeaways?.length ? `\n\nKey Takeaways:\n${qa.key_takeaways.map(k => `• ${k}`).join('\n')}` : ''}${qa.formula_or_diagram_note ? `\n\nFormula/Rule:\n${qa.formula_or_diagram_note}` : ''}`;
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedQAId(id);
+    setTimeout(() => setCopiedQAId(null), 2000);
+  };
+
+  const handleCopyAllQA = () => {
+    if (!analysis?.descriptive_qa_notes?.length) return;
+    const allText = analysis.descriptive_qa_notes.map((qa, idx) => {
+      return `Q${idx + 1}: ${qa.question}\n\n${qa.detailed_answer}${qa.key_takeaways?.length ? `\n\nTakeaways:\n${qa.key_takeaways.map(t => `• ${t}`).join('\n')}` : ''}${qa.formula_or_diagram_note ? `\n\nNote: ${qa.formula_or_diagram_note}` : ''}\n----------------------------------------`;
+    }).join('\n\n');
+    navigator.clipboard.writeText(`Topic: ${analysis.title}\n\n${allText}`);
+    setCopiedAllQA(true);
+    setTimeout(() => setCopiedAllQA(false), 2000);
   };
 
   // ---------------- Chat with Notes Handler ----------------
@@ -434,8 +532,18 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-teal-900 font-semibold text-xs hover:bg-teal-50 transition-all shadow-sm cursor-pointer"
             >
               <FileText className="w-3.5 h-3.5 text-teal-700" />
-              <span>Load Sample Notes (Optimization & Gradient Descent)</span>
+              <span>{user?.target_subject ? `Load Starter Notes (${user.target_subject})` : 'Load Starter Notes'}</span>
             </button>
+
+            {onOpenOnboarding && (
+              <button
+                onClick={onOpenOnboarding}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-900/60 hover:bg-teal-900/80 border border-teal-400/40 text-teal-100 font-semibold text-xs transition-all shadow-sm cursor-pointer"
+              >
+                <GraduationCap className="w-3.5 h-3.5 text-teal-300" />
+                <span>{user?.class_grade ? `${user.class_grade} • ${user.target_subject || 'General'}` : 'Select Class & Subject'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -454,7 +562,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
                 }`}
               >
                 <FileUp className="w-3.5 h-3.5" />
-                <span>Upload Document (PDF, Word, PPTX, TXT)</span>
+                <span>Upload Notes (PDF, JPG/Images, PPT, Word, TXT)</span>
               </button>
 
               <button
@@ -498,7 +606,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.docx,.pptx,.txt,.md,.json"
+                accept=".pdf,.pptx,.ppt,.docx,.txt,.md,.jpg,.jpeg,.png,.webp,.bmp"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -533,7 +641,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
                     Click to browse or drag and drop your notes
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Supports PDF textbooks, PPTX slides, Word DOCX, Markdown, and TXT files (up to 50 MB)
+                    Supports PDF textbooks, JPG / Images, PPT / Slides, Word DOCX, and TXT files (up to 50 MB)
                   </p>
                 </div>
               )}
@@ -609,6 +717,18 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
             {/* View Switcher Tabs */}
             <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700">
               <button
+                onClick={() => setActiveTab('qa_notes')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  activeTab === 'qa_notes'
+                    ? 'bg-teal-700 dark:bg-teal-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>Descriptive Q&A Notes ({analysis.descriptive_qa_notes?.length || 5})</span>
+              </button>
+
+              <button
                 onClick={() => setActiveTab('points')}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   activeTab === 'points'
@@ -617,7 +737,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
                 }`}
               >
                 <BookmarkCheck className="w-3.5 h-3.5" />
-                <span>Important Points</span>
+                <span>{t.instantPointsStat}</span>
               </button>
 
               <button
@@ -629,7 +749,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
                 }`}
               >
                 <Play className="w-3.5 h-3.5" />
-                <span>Video Tutor with Voiceover</span>
+                <span>{t.tabVideo}</span>
               </button>
 
               <button
@@ -641,7 +761,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>Cards on Topic ({cardsList.length})</span>
+                <span>{t.studyCardsStat} ({cardsList.length})</span>
               </button>
 
               <button
@@ -653,7 +773,7 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Chat with Notes</span>
+                <span>{t.tabChat}</span>
               </button>
 
               <button
@@ -671,10 +791,177 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
           </div>
 
           {/* ======================================================== */}
+          {/* TAB 0: DESCRIPTIVE Q&A NOTES (COVERING FULL TOPIC) */}
+          {/* ======================================================== */}
+          {activeTab === 'qa_notes' && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Immediate Quiz from Uploaded Notes Banner */}
+              {onNavigateToQuiz && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-700 to-emerald-700 text-white shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-teal-200" />
+                      <span className="font-bold text-sm">Practice Quiz Available</span>
+                    </div>
+                    <p className="text-xs text-teal-100">
+                      Adaptive quiz generated from these notes covering &quot;{analysis.topic}&quot;.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onNavigateToQuiz(analysis.topic)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-teal-900 font-bold text-xs hover:bg-teal-50 shadow-sm transition-all cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <span>Practice Quiz</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Section Intro Bar */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#2C3633] border border-slate-200 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <BookMarked className="w-4 h-4 text-teal-700 dark:text-teal-400" />
+                    <span>Important Descriptive Notes (Question & Answer Format)</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Comprehensive questions with detailed descriptive answers systematically covering the entire topic in your notes.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleCopyAllQA}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                >
+                  {copiedAllQA ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedAllQA ? 'All Notes Copied' : 'Copy All Q&A Notes'}</span>
+                </button>
+              </div>
+
+              {/* Q&A List */}
+              <div className="space-y-4">
+                {(analysis.descriptive_qa_notes && analysis.descriptive_qa_notes.length > 0
+                  ? analysis.descriptive_qa_notes
+                  : getDeterministicFallback(analysis.topic).descriptive_qa_notes || []
+                ).map((qa, idx) => {
+                  const qaId = qa.id || `qa_${idx + 1}`;
+                  const isCopied = copiedQAId === qaId;
+
+                  return (
+                    <div
+                      key={qaId}
+                      className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#2C3633] border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-4 transition-all hover:border-teal-500/50"
+                    >
+                      {/* Header: Topic Section Tag & Actions */}
+                      <div className="flex items-start sm:items-center justify-between gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-300 font-mono text-[11px] font-bold">
+                          {qa.topic_section || `Section ${idx + 1}`}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleCopySingleQA(qa, qaId)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            title="Copy this Question and Answer"
+                          >
+                            {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                          </button>
+
+                          {onAskTutor && (
+                            <button
+                              onClick={() => onAskTutor(qa.question)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900 border border-teal-200 dark:border-teal-800 transition-colors cursor-pointer"
+                              title="Ask AI Tutor to elaborate further on this question"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                              <span>Ask Tutor</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Question */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-7 h-7 rounded-xl bg-teal-700 dark:bg-teal-600 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-xs">
+                          Q{idx + 1}
+                        </div>
+                        <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug">
+                          {qa.question}
+                        </h4>
+                      </div>
+
+                      {/* Detailed Answer */}
+                      <div className="pl-0 sm:pl-10 space-y-3">
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
+                          {qa.detailed_answer}
+                        </div>
+
+                        {/* Formula or Diagram Note callout if present */}
+                        {qa.formula_or_diagram_note && (
+                          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-2.5">
+                            <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                            <div className="text-xs text-amber-900 dark:text-amber-200 font-mono">
+                              <span className="font-bold">Formula / Core Rule: </span>
+                              <span>{qa.formula_or_diagram_note}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Key Takeaways */}
+                        {qa.key_takeaways && qa.key_takeaways.length > 0 && (
+                          <div className="space-y-1.5 pt-1">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                              Key Points & Memory Anchors:
+                            </span>
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {qa.key_takeaways.map((point, pIdx) => (
+                                <li
+                                  key={pIdx}
+                                  className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300 bg-slate-100/70 dark:bg-slate-800/40 px-3 py-2 rounded-lg border border-slate-200/60 dark:border-slate-700/40"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                  <span>{point}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
           {/* TAB 1: IMPORTANT POINTS & SUMMARY */}
           {/* ======================================================== */}
           {activeTab === 'points' && (
             <div className="space-y-6">
+              {/* Immediate Quiz from Uploaded Notes Banner */}
+              {onNavigateToQuiz && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-700 to-emerald-700 text-white shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-teal-200" />
+                      <span className="font-bold text-sm">Quiz Generated from Uploaded Notes</span>
+                    </div>
+                    <p className="text-xs text-teal-100">
+                      Test your recall and understanding of &quot;{analysis.topic}&quot; immediately with an adaptive quiz.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onNavigateToQuiz(analysis.topic)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-teal-900 font-bold text-xs hover:bg-teal-50 shadow-sm transition-all cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <span>Practice Quiz on Notes</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
               {/* Executive Summary Card */}
               <div className="p-6 rounded-2xl bg-white dark:bg-[#2C3633] border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
@@ -1030,7 +1317,12 @@ where β ∈ [0.9, 0.99] dampens high-frequency transverse oscillations.`;
                       <span>Card {cardIndex + 1} of {cardsList.length}</span>
                     </div>
 
-                    <div className="my-auto py-6 space-y-3">
+                    <div className="my-auto py-4 space-y-4">
+                      {/* Rich Concept Diagram & Graph */}
+                      <div className="max-w-md mx-auto">
+                        <CardVisualDiagram topic={activeCard.front + ' ' + (activeCard.category || '')} category={activeCard.category} />
+                      </div>
+
                       {!isCardFlipped ? (
                         <div className="space-y-2">
                           <span className="text-[10px] uppercase font-bold text-teal-700 dark:text-teal-400 tracking-wider">

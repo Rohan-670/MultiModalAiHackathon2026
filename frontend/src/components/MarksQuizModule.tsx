@@ -48,15 +48,21 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
 }) => {
   // ---------------- Core App Navigation & State ----------------
   const [activeView, setActiveView] = useState<QuizViewMode>('create');
-  const [targetExam, setTargetExam] = useState<string>('JEE Main');
+  const [targetExam, setTargetExam] = useState<string>('CS229 & AI/ML');
   const availableExams = [
-    { id: 'JEE Main', title: 'JEE Main 2026', description: 'Engineering entrance: Maths, Physics, Chemistry.' },
-    { id: 'JEE Advanced', title: 'JEE Advanced', description: 'IIT entrance: multi-correct, integer numericals.' },
-    { id: 'NEET UG', title: 'NEET UG', description: 'Medical entrance: Biology, Physics, Chemistry.' },
-    { id: 'GATE CS & AI', title: 'GATE Computer Science & AI', description: 'Algorithms, systems, and AI foundations.' },
-    { id: 'CS229 & AI/ML', title: 'Stanford CS229 / AI & Machine Learning', description: 'Optimization, neural backprop, and machine learning.' }
+    { id: 'CS229 & AI/ML', title: 'Computer Science & AI / ML', description: 'Machine learning, optimization, neural networks, and algorithms.' },
+    { id: 'JEE Main', title: 'General Science & Mathematics', description: 'Calculus, algebra, geometry, probability, and foundational sciences.' },
+    { id: 'JEE Advanced', title: 'Physics & Advanced Sciences', description: 'Mechanics, electromagnetism, optics, and thermodynamics.' },
+    { id: 'NEET UG', title: 'Chemistry & Biology', description: 'Biochemistry, molecular systems, genetics, and physiology.' },
+    { id: 'GATE CS & AI', title: 'Algorithms & Computing Systems', description: 'Systems, data structures, and computational theory.' }
   ];
   const [curriculum, setCurriculum] = useState<ExamCurriculum | null>(null);
+
+  useEffect(() => {
+    if (initialTopic) {
+      setUserRequirements(`Focus specifically on ${initialTopic} with clear conceptual explanations.`);
+    }
+  }, [initialTopic]);
 
   // ---------------- Custom Test Generator Parameters ----------------
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
@@ -505,7 +511,7 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Target Exam
+                  Study Domain / Subject
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-1">
                   <Flame className="w-3 h-3 text-amber-500 fill-amber-500" />
@@ -592,14 +598,69 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
             <div className="relative z-10 max-w-2xl space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-teal-100 text-xs font-semibold backdrop-blur-xs">
                 <Target className="w-3.5 h-3.5 text-teal-200" />
-                <span>MARKS Custom Test Generator</span>
+                <span>Adaptive Assessment Studio</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-                Design Your Adaptive Test
+                Generate Quiz on Student Demand
               </h2>
               <p className="text-teal-100/90 text-xs sm:text-sm leading-relaxed">
-                Configure your subjects, select high-yield chapters, specify custom question requirements, and choose between Practice Mode or timed CBT simulation.
+                Configure your subject, select chapters, generate custom quizzes on demand, or test yourself from your uploaded notes.
               </p>
+            </div>
+          </div>
+
+          {/* On-Demand Quiz Generation Card */}
+          <div className="p-6 rounded-3xl bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/60 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <h3 className="font-extrabold text-sm sm:text-base text-teal-950 dark:text-teal-100">
+                  Instant Quiz on Demand
+                </h3>
+              </div>
+              <span className="text-[11px] text-teal-700 dark:text-teal-300 font-mono">
+                Student Request or Notes
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={userRequirements}
+                onChange={(e) => setUserRequirements(e.target.value)}
+                placeholder="Enter any topic or concept (e.g. Calculus & Optimization, Thermodynamics, Neural Networks)..."
+                className="flex-1 px-4 py-2.5 text-xs sm:text-sm rounded-xl bg-white dark:bg-slate-900 border border-teal-300 dark:border-teal-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+              <button
+                type="button"
+                onClick={handleGenerateTest}
+                disabled={isLoading}
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{isLoading ? 'Generating Quiz...' : 'Generate Quiz Now'}</span>
+              </button>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Quick Topics:</span>
+              {[
+                'Calculus & Optimization',
+                'Deep Learning & Backpropagation',
+                'Thermodynamics & Heat Engine',
+                'Cellular Respiration & Genetics',
+                'Linear Algebra & Eigenvalues'
+              ].map((topic) => (
+                <button
+                  key={topic}
+                  type="button"
+                  onClick={() => setUserRequirements(`Focus specifically on ${topic} with conceptual derivations.`)}
+                  className="text-[10px] px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-500 hover:text-teal-700 dark:hover:text-teal-300 transition-colors cursor-pointer"
+                >
+                  {topic}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -821,8 +882,8 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
                   >
                     <option value="easy">Easy (Foundational)</option>
                     <option value="intermediate">Moderate (Standard)</option>
-                    <option value="advanced">Advanced (IIT / Olympiad Rigor)</option>
-                    <option value="adaptive">🧠 Adaptive (BKT Dynamic)</option>
+                    <option value="advanced">Advanced (Deep & Rigorous)</option>
+                    <option value="adaptive">🧠 Adaptive</option>
                   </select>
                 </div>
 
@@ -914,7 +975,7 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
                   "🔥 High-Weightage PYQ Traps",
                   "🧮 Heavy Numerical Calculations",
                   "🧗 Multi-Step Conceptual Derivations",
-                  "🎯 Focus on BKT Knowledge Gaps",
+                  "🎯 Focus on Knowledge Gaps",
                   "⚡ 15-Minute Speed Sprint",
                   "⚠️ Negative Sign & Curvature Traps"
                 ].map((chip) => (
@@ -1036,7 +1097,7 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
 
                         <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                           <span className="text-[11px] text-teal-700 dark:text-teal-400 font-semibold">
-                            BKT Tracked
+                            Mastery Tracked
                           </span>
                           <button
                             onClick={() => handlePracticeChapter(chap.name, subj.name)}
@@ -1616,7 +1677,7 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
                     {practiceResult?.bkt_mastery && (
                       <span className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 font-bold">
                         <TrendingUp className="w-3.5 h-3.5" />
-                        <span>BKT: {(practiceResult.bkt_mastery.new_mastery * 100).toFixed(1)}%</span>
+                        <span>Mastery: {(practiceResult.bkt_mastery.new_mastery * 100).toFixed(1)}%</span>
                       </span>
                     )}
                   </div>
@@ -1771,7 +1832,7 @@ export const MarksQuizModule: React.FC<MarksQuizModuleProps> = ({
                   className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Award className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                  <span>BKT Gap Report</span>
+                  <span>Knowledge Gap Report</span>
                 </button>
               </div>
             </div>

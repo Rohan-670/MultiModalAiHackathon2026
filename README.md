@@ -1,8 +1,8 @@
-# LearnSphere MARKS — AI Exam Assessment & Custom Test Platform
+# LearnSphere AI — Intelligent Adaptive Learning & Assessment Platform
 
-A full-stack, AI-powered exam preparation and adaptive testing platform inspired by the concept of [MARKS](https://web.getmarks.app/). Built for serious competitive exam aspirants (JEE Main, JEE Advanced, NEET UG, GATE CS & AI, and Computer Science).
+A full-stack, AI-powered learning and adaptive assessment platform. Built for students across all academic levels (Class 9 through College / Graduate), supporting multiple subjects including Computer Science & AI, Mathematics & Calculus, Physics, Chemistry, Biology, and Economics.
 
-Features on-demand quiz and mock test generation tailored to custom user requirements, an authentic NTA-style Computer-Based Test (CBT) simulator, instant step-by-step mathematical explanations, and Bayesian Knowledge Tracing (BKT).
+Features personalized notes management, document-to-notes AI analysis (PDF, PPT, JPG), on-demand adaptive quiz synthesis, visual flashcards with diagrams, interactive voiceover lessons, and contextual AI tutoring.
 
 ---
 

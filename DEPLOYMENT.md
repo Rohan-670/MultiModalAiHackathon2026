@@ -1,6 +1,6 @@
 # 🚀 Deployment & Publishing Guide
 
-This guide details how to publish and deploy the **LearnSphere AI / MARKS Assessment Platform** to public cloud platforms, GitHub, or Docker containers.
+This guide details how to publish and deploy the **LearnSphere AI Platform** to public cloud platforms, GitHub, or Docker containers.
 
 ---
 
@@ -25,7 +25,7 @@ git init
 git add .
 
 # 3. Create initial commit
-git commit -m "feat: MARKS App custom test redesign & adaptive learning system"
+git commit -m "feat: LearnSphere AI adaptive learning platform"
 
 # 4. Link to your GitHub repository
 git remote add origin https://github.com/<YOUR_USERNAME>/<YOUR_REPO_NAME>.git
@@ -51,7 +51,7 @@ Render provides free hosting for Web Services using Docker:
    * `GEMINI_API_KEY`: *Your Google Gemini API Key* ([Get free key here](https://aistudio.google.com/app/apikey))
    * `PORT`: `8000`
 6. Click **Create Web Service**.
-7. Render will build the React frontend and Python runtime, giving you a live public URL (e.g. `https://learnsphere-marks.onrender.com`).
+7. Render will build the React frontend and Python runtime, giving you a live public URL (e.g. `https://learnsphere-ai.onrender.com`).
 
 ---
 
@@ -72,10 +72,10 @@ Deploy to any container platform:
 
 ```bash
 # 1. Build Docker image
-docker build -t learnsphere-marks:latest .
+docker build -t learnsphere-ai:latest .
 
 # 2. Run locally or on your server
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_api_key" learnsphere-marks:latest
+docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_api_key" learnsphere-ai:latest
 ```
 
 Using Docker Compose:
@@ -115,6 +115,6 @@ If you prefer hosting the React static files separately on Vercel:
 ## ✅ Post-Deployment Verification
 
 Once deployed, visit your live URL:
-1. `https://your-app.onrender.com/` → Loads the MARKS Web Application.
+1. `https://your-app.onrender.com/` → Loads the LearnSphere AI Web Application.
 2. `https://your-app.onrender.com/api/health` → Returns `{"status": "healthy", "gemini_active": true}`.
 3. `https://your-app.onrender.com/docs` → Displays the OpenAPI Swagger documentation.

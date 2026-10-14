@@ -1,4 +1,29 @@
-export type Language = 'English' | 'Hinglish' | 'Hindi' | 'Spanish';
+export type Language =
+  | 'English'
+  | 'Hindi'
+  | 'Spanish'
+  | 'French'
+  | 'German'
+  | 'Mandarin'
+  | 'Arabic'
+  | 'Bengali'
+  | 'Marathi'
+  | 'Telugu'
+  | 'Tamil'
+  | 'Kannada'
+  | 'Japanese'
+  | 'Portuguese'
+  | 'Russian'
+  | 'Hinglish';
+
+export interface PersonalNote {
+  id: string;
+  title: string;
+  subject: string;
+  content: string;
+  createdAt: string;
+  tags?: string[];
+}
 
 export interface Citation {
   tag: string;
@@ -360,12 +385,17 @@ export interface UserProfile {
   email: string;
   full_name: string;
   role: string;
+  class_grade?: string;
+  target_subject?: string;
+  onboarding_completed?: boolean;
   preferences?: {
     teaching_style?: string;
     language?: string;
     theme?: string;
     voice_speed?: number;
     auto_scaffold?: boolean;
+    class_grade?: string;
+    target_subject?: string;
   };
 }
 
@@ -448,10 +478,20 @@ export interface NoteStudyCard {
   isMastered?: boolean;
 }
 
+export interface NoteQAPair {
+  id?: string;
+  question: string;
+  topic_section?: string;
+  detailed_answer: string;
+  key_takeaways?: string[];
+  formula_or_diagram_note?: string;
+}
+
 export interface NoteAnalysisResult {
   title: string;
   topic: string;
   summary: string;
+  descriptive_qa_notes?: NoteQAPair[];
   important_points: NoteImportantPoints;
   video_tutor: NoteVideoTutor;
   cards: NoteStudyCard[];

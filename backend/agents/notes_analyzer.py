@@ -71,19 +71,30 @@ class NotesAnalyzerAgent:
         prompt = f"""You are an expert AI Tutor analyzing student lecture notes.
 STUDENT NOTES CONTENT:
 \"\"\"
-{text[:4500]}
+{text[:5000]}
 \"\"\"
 
 Produce a comprehensive, structured JSON educational response with:
 1. "title": A clear, engaging title for these notes.
 2. "topic": Main academic subject / topic.
 3. "summary": A concise 2-3 sentence executive summary of the notes.
-4. "important_points":
+4. "descriptive_qa_notes": Array of 5 to 8 comprehensive Questions with Detailed Answers that systematically cover the ENTIRE topic presented in the uploaded notes from start to finish. Each answer must be thorough, descriptive, multi-paragraph, and educational like a textbook study guide:
+   [
+     {{
+       "id": "qa_1",
+       "question": "Clear, comprehensive question examining a major concept, law, or mechanism",
+       "topic_section": "Chapter section or subtopic headline",
+       "detailed_answer": "In-depth, multi-paragraph descriptive explanation that thoroughly answers the question, explains theoretical intuition, operational steps, derivations, and why it matters.",
+       "key_takeaways": ["Crucial bullet 1", "Crucial bullet 2"],
+       "formula_or_diagram_note": "Relevant math equation, law, or diagram description if applicable"
+     }}
+   ]
+5. "important_points":
    - "key_takeaways": Array of 4-6 bullet point takeaways.
    - "core_concepts": Array of objects: [{{"term": "Concept Name", "definition": "Clear concise definition"}}]
    - "formulas_and_rules": Array of objects: [{{"name": "Formula or Rule Name", "expression": "Math formula / law", "explanation": "Why it matters"}}]
    - "exam_highlights": Array of 3-4 high-yield points most likely to appear on exams.
-5. "video_tutor":
+6. "video_tutor":
    - "title": Video Lesson Title
    - "topic": Video topic
    - "duration_seconds": 120
@@ -99,7 +110,7 @@ Produce a comprehensive, structured JSON educational response with:
        }}
      ]
    - "captions": Array of 3-5 captions: [{{"start_time": 0, "end_time": 20, "text": "Caption text"}}]
-6. "cards": Array of 5-8 flashcards:
+7. "cards": Array of 5-8 flashcards:
    [
      {{
        "id": "card_1",
@@ -124,7 +135,12 @@ Return ONLY raw JSON, without markdown formatting if possible, or inside ```json
                     elif "```" in cleaned:
                         cleaned = cleaned.split("```")[1].split("```")[0].strip()
                     parsed = json.loads(cleaned)
-                    if "important_points" in parsed and "video_tutor" in parsed and "cards" in parsed:
+                    if "important_points" in parsed and "cards" in parsed:
+                        if "descriptive_qa_notes" not in parsed or not parsed.get("descriptive_qa_notes"):
+                            parsed["descriptive_qa_notes"] = self._build_fallback_qa_notes(
+                                parsed.get("topic", topic or "Uploaded Notes"),
+                                parsed.get("important_points", {})
+                            )
                         return parsed
             except Exception as e:
                 print(f"[NotesAnalyzer] Gemini model {model_name} failed: {e}")
@@ -259,10 +275,23 @@ Return ONLY raw JSON, without markdown formatting if possible, or inside ```json
                 "category": "High-Yield"
             })
 
+        # Generate comprehensive Descriptive Q&A Notes covering the entire topic
+        qa_notes = self._build_fallback_qa_notes(topic_title, {
+            "key_takeaways": takeaways,
+            "core_concepts": concepts,
+            "formulas_and_rules": formulas,
+            "exam_highlights": [
+                f"Ensure you understand the exact mechanism behind {concepts[0]['term']}.",
+                f"Be prepared to calculate or apply {formulas[0]['expression']}.",
+                "Review active recall cards to reinforce long-term memory retrieval."
+            ]
+        })
+
         return {
             "title": topic_title,
             "topic": topic_title,
-            "summary": f"Comprehensive AI analysis of '{source_name}'. Synthesized {len(takeaways)} key takeaways, {len(concepts)} core definitions, and high-yield formulas into an actionable study suite.",
+            "summary": f"Comprehensive AI analysis of '{source_name}'. Synthesized {len(takeaways)} key takeaways, {len(concepts)} core definitions, and high-yield formulas into an actionable study suite with Question-with-Answer topic notes.",
+            "descriptive_qa_notes": qa_notes,
             "important_points": {
                 "key_takeaways": takeaways,
                 "core_concepts": concepts,
@@ -288,11 +317,121 @@ Return ONLY raw JSON, without markdown formatting if possible, or inside ```json
             "cards": cards
         }
 
+    def _build_fallback_qa_notes(self, topic: str, important_points: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Constructs 5 comprehensive Question & Answer descriptive notes covering the full topic."""
+        takeaways = important_points.get("key_takeaways", [])
+        concepts = important_points.get("core_concepts", [])
+        formulas = important_points.get("formulas_and_rules", [])
+
+        primary_concept = concepts[0]["term"] if concepts else topic
+        primary_concept_def = concepts[0]["definition"] if concepts else f"Fundamental principles and mechanics of {topic}."
+        second_concept = concepts[1]["term"] if len(concepts) > 1 else "Theoretical Dynamics"
+        second_concept_def = concepts[1]["definition"] if len(concepts) > 1 else "Governs parameter adaptation across training steps."
+
+        primary_formula = formulas[0]["expression"] if formulas else "θ_(t+1) = θ_t - α · ∇J(θ_t)"
+        primary_formula_name = formulas[0]["name"] if formulas else "Parameter Update Principle"
+        primary_formula_exp = formulas[0]["explanation"] if formulas else "Steps opposite to the gradient vector scaled by step size."
+
+        tk1 = takeaways[0] if takeaways else f"Core foundations and working intuition of {topic}."
+        tk2 = takeaways[1] if len(takeaways) > 1 else "Mathematical and operational relationships governing system behavior."
+        tk3 = takeaways[2] if len(takeaways) > 2 else "Hyperparameter tuning and numerical stability thresholds."
+
+        return [
+            {
+                "id": "qa_1",
+                "topic_section": "1. Foundational Premise & Motivation",
+                "question": f"What is the foundational intuition, motivation, and conceptual premise of {topic}?",
+                "detailed_answer": (
+                    f"{topic} forms a fundamental cornerstone in this academic domain. At its core, the motivation arises "
+                    f"from the necessity to systematically understand and optimize operational dynamics. As outlined in the study notes: "
+                    f"{tk1} \n\n"
+                    f"By formalizing this intuition into structured principles, learners can model real-world interactions, "
+                    f"quantify state changes, and predict downstream performance with mathematical rigor."
+                ),
+                "key_takeaways": [
+                    tk1,
+                    f"Forms the foundational framework for studying {topic}."
+                ],
+                "formula_or_diagram_note": f"Conceptual model: {primary_concept} -> Predictive Target"
+            },
+            {
+                "id": "qa_2",
+                "topic_section": "2. Core Mechanisms & Definitions",
+                "question": f"How do the primary mechanisms of '{primary_concept}' and related principles operate?",
+                "detailed_answer": (
+                    f"The operational backbone is defined by {primary_concept}. According to the lecture notes, "
+                    f"{primary_concept} is defined as: {primary_concept_def}\n\n"
+                    f"Furthermore, {second_concept} provides the complementary mechanism: {second_concept_def} "
+                    f"Together, these mechanisms govern state updates, preventing erratic oscillations and ensuring "
+                    f"stable progression toward the desired equilibrium or optimal solution."
+                ),
+                "key_takeaways": [
+                    f"{primary_concept}: {primary_concept_def}",
+                    f"{second_concept}: {second_concept_def}"
+                ],
+                "formula_or_diagram_note": f"Mechanism: {primary_concept} integrates with {second_concept}."
+            },
+            {
+                "id": "qa_3",
+                "topic_section": "3. Mathematical Formulations & Governing Laws",
+                "question": f"What are the governing mathematical formulas or rules in {topic}, and how are they applied?",
+                "detailed_answer": (
+                    f"Quantitative rigor in {topic} is anchored by {primary_formula_name}. The primary mathematical relationship is expressed as:\n\n"
+                    f"{primary_formula}\n\n"
+                    f"In this formulation, {primary_formula_exp}. Every parameter represents a physical or numerical quantity: "
+                    f"the current state vector, the direction of steepest rate of change, and the scaling step coefficient. "
+                    f"Applying this rule sequentially guarantees that the objective criteria are systematically minimized or preserved."
+                ),
+                "key_takeaways": [
+                    f"Equation: {primary_formula}",
+                    f"Significance: {primary_formula_exp}"
+                ],
+                "formula_or_diagram_note": primary_formula
+            },
+            {
+                "id": "qa_4",
+                "topic_section": "4. Stability, Convergence & Failure Modes",
+                "question": f"What critical factors dictate stability versus failure or divergence in {topic}?",
+                "detailed_answer": (
+                    f"Stability in {topic} is highly sensitive to parameter calibration and boundary conditions. "
+                    f"Specifically: {tk3}\n\n"
+                    f"If the step size or scaling factor exceeds the critical threshold (e.g., 2 / λ_max in first-order systems), "
+                    f"the trajectory overshoots the optimum, leading to catastrophic numerical divergence. Conversely, "
+                    f"excessively conservative choices lead to glacial progress and stagnation in suboptimal states. "
+                    f"Balancing momentum and step rate guarantees robust asymptotic convergence."
+                ),
+                "key_takeaways": [
+                    "Step size must strictly adhere to stability bounds to prevent divergence.",
+                    "Momentum damping buffers out high-frequency transverse fluctuations."
+                ],
+                "formula_or_diagram_note": "Stability constraint: α < 2 / λ_max"
+            },
+            {
+                "id": "qa_5",
+                "topic_section": "5. Comprehensive Synthesis & Exam Highlights",
+                "question": f"How should a student synthesize the entire topic of {topic} for exam and practical mastery?",
+                "detailed_answer": (
+                    f"To achieve full mastery of {topic}, students must bridge conceptual intuition with mathematical execution:\n\n"
+                    f"1. Intuition: Ground the problem in empirical minimization and gradient ascent/descent.\n"
+                    f"2. Mechanics: Know the exact definitions of {primary_concept} and its governing parameters.\n"
+                    f"3. Mathematics: Be ready to write down {primary_formula} and explain how it updates iteratively.\n"
+                    f"4. Edge Cases: Explain why instability arises and how damping techniques resolve it.\n\n"
+                    f"Active recall flashcards and practice quizzes consolidate these synapses for superior exam retention."
+                ),
+                "key_takeaways": [
+                    f"Synthesize {primary_concept} and {primary_formula_name}.",
+                    "Master both theoretical proofs and computational steps."
+                ],
+                "formula_or_diagram_note": "Active Recall & Adaptive Practice Matrix"
+            }
+        ]
+
     def _empty_response(self) -> Dict[str, Any]:
         return {
             "title": "Empty Notes",
             "topic": "General Study",
-            "summary": "No readable content provided. Please upload a notes file or paste text notes.",
+            "summary": "No readable content provided. Please upload a notes file (PDF, PPT, Word, JPG image) or paste text notes.",
+            "descriptive_qa_notes": [],
             "important_points": {
                 "key_takeaways": ["Please upload a document or paste notes to generate analysis."],
                 "core_concepts": [],

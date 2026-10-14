@@ -63,6 +63,8 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     full_name: str
+    class_grade: Optional[str] = None
+    target_subject: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: str
@@ -130,24 +132,31 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="An account with this email already exists.")
 
+    initial_prefs = {
+        "teaching_style": "detailed",
+        "language": "English",
+        "theme": "light",
+        "voice_speed": 1.0,
+        "auto_scaffold": True
+    }
+    if req.class_grade:
+        initial_prefs["class_grade"] = req.class_grade
+    if req.target_subject:
+        initial_prefs["target_subject"] = req.target_subject
+
     new_user = User(
         email=req.email.lower(),
         password_hash=hash_password(req.password),
         full_name=req.full_name,
         role="student",
-        preferences=json.dumps({
-            "teaching_style": "detailed",
-            "language": "English",
-            "theme": "light",
-            "voice_speed": 1.0,
-            "auto_scaffold": True
-        })
+        preferences=json.dumps(initial_prefs)
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     token = create_access_token(new_user.id, new_user.email, new_user.role)
+    new_user_prefs = new_user.get_preferences()
     return {
         "message": "Registration successful.",
         "access_token": token,
@@ -156,7 +165,9 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
             "email": new_user.email,
             "full_name": new_user.full_name,
             "role": new_user.role,
-            "preferences": new_user.get_preferences()
+            "class_grade": new_user_prefs.get("class_grade"),
+            "target_subject": new_user_prefs.get("target_subject"),
+            "preferences": new_user_prefs
         }
     }
 
@@ -168,6 +179,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     token = create_access_token(user.id, user.email, user.role)
+    user_prefs = user.get_preferences()
     return {
         "message": "Login successful.",
         "access_token": token,
@@ -176,19 +188,24 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
             "email": user.email,
             "full_name": user.full_name,
             "role": user.role,
-            "preferences": user.get_preferences()
+            "class_grade": user_prefs.get("class_grade"),
+            "target_subject": user_prefs.get("target_subject"),
+            "preferences": user_prefs
         }
     }
 
 @app.get("/api/auth/me")
 def get_me(user: User = Depends(get_current_user)):
     """Fetches profile of the currently authenticated student."""
+    user_prefs = user.get_preferences()
     return {
         "id": user.id,
         "email": user.email,
         "full_name": user.full_name,
         "role": user.role,
-        "preferences": user.get_preferences()
+        "class_grade": user_prefs.get("class_grade"),
+        "target_subject": user_prefs.get("target_subject"),
+        "preferences": user_prefs
     }
 
 @app.put("/api/auth/preferences")
@@ -311,12 +328,36 @@ async def analyze_notes_file(
         if ext == ".pdf":
             chunks = smart_ingestor.pdf_parser.parse_pdf(save_path, source_id=filename)
             extracted_text = "\n\n".join(c["text"] for c in chunks)
-        elif ext == ".pptx":
-            chunks = smart_ingestor.pptx_parser.parse_pptx(save_path, source_id=filename)
-            extracted_text = "\n\n".join(c["text"] for c in chunks)
+        elif ext in [".pptx", ".ppt"]:
+            try:
+                chunks = smart_ingestor.pptx_parser.parse_pptx(save_path, source_id=filename)
+                extracted_text = "\n\n".join(c["text"] for c in chunks)
+            except Exception:
+                with open(save_path, "r", encoding="utf-8", errors="ignore") as f:
+                    extracted_text = f.read()
         elif ext == ".docx":
             chunks = smart_ingestor.docx_parser.parse_docx(save_path, source_id=filename)
             extracted_text = "\n\n".join(c["text"] for c in chunks)
+        elif ext in [".jpg", ".jpeg", ".png", ".webp", ".bmp"]:
+            # Process image using Gemini Vision / PIL to transcribe notes, text, and diagrams
+            try:
+                from PIL import Image
+                img = Image.open(save_path)
+                if gemini_client:
+                    vision_resp = gemini_client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=[
+                            "Transcribe and thoroughly explain all notes, text, mathematical equations, diagrams, and headings in this study image. Provide full descriptive details so the student can study the entire topic:",
+                            img
+                        ]
+                    )
+                    if vision_resp.text:
+                        extracted_text = vision_resp.text.strip()
+                if not extracted_text:
+                    extracted_text = f"Visual lecture notes extracted from image {filename} regarding {topic or 'academic subject'}."
+            except Exception as img_err:
+                print(f"[NotesImageExtraction] Image parsing error: {img_err}")
+                extracted_text = f"Visual notes and diagrams from {filename} regarding {topic or 'academic subject'}."
         elif ext in [".txt", ".md"]:
             chunks = smart_ingestor.text_parser.parse_text(save_path, source_id=filename)
             extracted_text = "\n\n".join(c["text"] for c in chunks)

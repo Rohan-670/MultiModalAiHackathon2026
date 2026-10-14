@@ -11,13 +11,17 @@ import {
   RotateCcw,
   Clock
 } from 'lucide-react';
-import type { Flashcard, AudioBrief, StudyScheduleItem, Citation } from '../types';
+import { CardVisualDiagram } from './CardVisualDiagram';
+import type { Flashcard, AudioBrief, StudyScheduleItem, Citation, Language } from '../types';
+import { getTranslation } from '../i18n';
 
 interface RevisionSuiteProps {
   onCitationClick: (cit: Citation) => void;
+  language?: Language;
 }
 
-export const RevisionSuite: React.FC<RevisionSuiteProps> = ({ onCitationClick }) => {
+export const RevisionSuite: React.FC<RevisionSuiteProps> = ({ onCitationClick, language = 'English' }) => {
+  const t = getTranslation(language);
   const [subTab, setSubTab] = useState<'flashcards' | 'audio' | 'schedule'>('flashcards');
 
   // Flashcards state
@@ -117,10 +121,10 @@ export const RevisionSuite: React.FC<RevisionSuiteProps> = ({ onCitationClick })
         <div>
           <div className="flex items-center gap-2">
             <BookmarkCheck className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-base sm:text-lg font-bold text-white">Targeted Revision Suite</h2>
+            <h2 className="text-base sm:text-lg font-bold text-white">{t.flashcardsTitle}</h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Produce targeted revision materials for weak topics: Interactive Flashcards, 2-Minute Spoken Audio Briefs, and Spaced-Repetition Schedules.
+            {t.flashcardsSubtitle}
           </p>
         </div>
 
@@ -136,7 +140,7 @@ export const RevisionSuite: React.FC<RevisionSuiteProps> = ({ onCitationClick })
             }`}
           >
             <BookmarkCheck className="w-3.5 h-3.5" />
-            <span>Flashcards</span>
+            <span>{t.tabRevision}</span>
           </button>
           <button
             onClick={() => setSubTab('audio')}
@@ -197,14 +201,27 @@ export const RevisionSuite: React.FC<RevisionSuiteProps> = ({ onCitationClick })
                   </span>
                 </div>
 
-                <div className="my-auto py-6 text-center space-y-3">
+                <div className="my-auto py-4 space-y-4">
+                  {/* Visual Diagram / Graph */}
+                  <div className="max-w-md mx-auto">
+                    <CardVisualDiagram topic={currentCard.concept} category={currentCard.source_type} />
+                  </div>
+
                   {!isFlipped ? (
-                    <h3 className="text-lg sm:text-xl font-bold text-white leading-relaxed max-w-xl mx-auto">
-                      {currentCard.front}
-                    </h3>
+                    <div className="text-center space-y-2">
+                      <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">
+                        Active Recall Question
+                      </span>
+                      <h3 className="text-base sm:text-xl font-bold text-white leading-relaxed max-w-xl mx-auto">
+                        {currentCard.front}
+                      </h3>
+                    </div>
                   ) : (
-                    <div className="space-y-4 max-w-xl mx-auto">
-                      <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-medium">
+                    <div className="space-y-3 max-w-xl mx-auto text-center">
+                      <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
+                        Verified Explanation & Derivation
+                      </span>
+                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
                         {currentCard.back}
                       </p>
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-700/60 text-indigo-300 font-mono text-xs">
